@@ -1,11 +1,11 @@
-import { IDataFunction } from "../model/DataFunction";
+import { DataFunction } from "../model/DataFunction";
 import { INode } from "../model/Node";
 
-class AdditionFn implements IDataFunction<number> {
-    compute = (dependencies: Map<string, INode<number>>) => {
+class AdditionFn extends DataFunction<number> {
+    compute = (dependencies: Map<string, INode<number> | undefined>) => {
         let sum = 0;
         for (const [_, node] of dependencies) {
-            sum += node.data
+            sum += (node?.data || 0)
         }
         return sum
     }
