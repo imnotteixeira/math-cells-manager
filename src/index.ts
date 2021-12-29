@@ -1,6 +1,6 @@
-import AdditionFn from "./functions/Addition";
-import { DataFunction, DumbNumberSumDefinitionParser } from "./model/DataFunction";
-import { INode, Node } from "./model/Node";
+import { DumbNumberSumDefinitionParser } from "./functions/Addition";
+import { DataFunction } from "./model/DataFunction";
+import { Node } from "./model/Node";
 import { NodeMesh } from "./model/NodeMesh";
 
 const NodeA = new Node<number>("A", new DataFunction<number>("1+1", new DumbNumberSumDefinitionParser()))
@@ -29,3 +29,18 @@ grid.printNodes()
 console.info("Iteration #3 :: Change A to 0")
 NodeA.setDataFunction(new DataFunction<number>("0+0", new DumbNumberSumDefinitionParser()))
 grid.printNodes()
+
+console.info("Iteration #4 :: Add Node F")
+const NodeF = new Node<number>("F", new DataFunction<number>("1+0", new DumbNumberSumDefinitionParser()))
+grid.addNode(NodeF)
+grid.printNodes()
+
+console.info("Iteration #5 :: Change A to undefined (Simulate Error)")
+NodeA.setDataFunction(new DataFunction<number>("", new DumbNumberSumDefinitionParser()))
+grid.printNodes()
+
+console.info("Iteration #5 :: Change A to good value, but C to undefined (Simulate Error)")
+NodeA.setDataFunction(new DataFunction<number>("1+1", new DumbNumberSumDefinitionParser()))
+NodeC.setDataFunction(new DataFunction<number>("", new DumbNumberSumDefinitionParser()))
+grid.printNodes()
+
