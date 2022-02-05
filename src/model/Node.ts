@@ -22,16 +22,24 @@ export interface INode<T> {
     setSubscriptionRequester: (fn: (requesterId: string, targetId: string) => void) => INode<T>,
     requestSubscriptionDrop: (requesterId: string, targetId: string) => void
     setSubscriptionDropper: (fn: (requesterId: string, targetId: string) => void) => INode<T>,
+    propagationState: PropagatorState,
+    sleep: () => void,
+    wakeUp : () => void,
 }
+
+enum PropagatorState { "ACTIVE", "SLEEPY", "SLEEPING"};
 
 export class Node<T> implements INode<T> {
     id: string;
     data: T | undefined;
     dataFn: IDataFunction<T>;
-    hasOutdatedValue = false
-    
+    hasOutdatedValue: boolean = false
     dependents: Set<string>;
-    dependencies: Map<string, INode<T> | undefined> = new Map();
+    // TODO: Optimization: store only Ids and query the NodeMesh registry for nodes
+    // This way, the nodes are only stored in one place (even though we are only working with references here...)
+    dependencies: Map<string, INode<T> | undefined> = new Map(); 
+
+    propagationState: PropagatorState = PropagatorState.ACTIVE;
     
     // These are injected in the NodeMesh
     propagateUpdate!: UpdatePropagator<T>;
@@ -75,16 +83,16 @@ export class Node<T> implements INode<T> {
 
     /** Modify self data and notify dependents */
     setDataFunction = (fn: IDataFunction<T>): T | undefined => {
+
+        // TODO: Prevent cycle dependencies (need to check if this node is anywhere above in the dependency graph)
         this.dataFn = fn;
-        
-        this.reconcileDependencies(this.dataFn.dependencyIds)
-        
-        this.data = this.computeData()
-        
-        return this.data;
+        return this.triggerDataRecomputation()
     }
 
     computeData = (): T | undefined => {
+
+        if(this.propagationState === PropagatorState.SLEEPING) return;
+
         this.data = this.dataFn.compute(this.dependencies);
         this.hasOutdatedValue = false
         // TODO optimization candidate: batching updates 
@@ -96,9 +104,9 @@ export class Node<T> implements INode<T> {
     }
 
     /** Reconciles dependencies, adding missing ones, and removing unused ones */
-    reconcileDependencies = (newDependencyIds: Set<string>): Map<string, INode<T> | undefined> => {
+    reconcileDependencies = (newDependencyIds: Set<string>, force: boolean = false): Map<string, INode<T> | undefined> => {
         
-        console.info(`[Node ${this.id}] Reconciliating Dependencies...`)
+        console.info(`[Node ${this.id}] Reconciliating Dependencies...`);
         
         const newDependencyIdsClone = new Set(newDependencyIds);
         console.debug(`[Node ${this.id}] New Dependencies:`)
@@ -151,10 +159,7 @@ export class Node<T> implements INode<T> {
         console.info(`[Node ${this.id}] Dependency values:`)
 
         for (const [id, dep] of this.dependencies) {
-            console.info(`[Node ${this.id}]\t${id} => ${dep?.data}`)
-            
-            const node = this.getNodeById(id)
-            if(node) this.dependencies.set(id, node)
+            console.info(`[Node ${this.id}]\t${id} => ${dep?.data}`)   
         }
 
         return this.computeData();
@@ -174,5 +179,21 @@ export class Node<T> implements INode<T> {
     /** Cancel a Node subscription, to stop being notified when this node is updated */
     unsubscribe = (dependentId: string) => {
         this.dependents.delete(dependentId);
+    }
+
+    /** Halts all subscriptions, so this node will not receive update notifications from its dependencies
+     * Nor will reconcile dependencies or update its data (even if its dataFn changes - the dataFn is kept, though)
+     * The Node will be reconciled once it is awaken
+     */
+    sleep = () => {
+        
+        // TODO make checks in order to know if it should be set to SLEEPY instead (depending on dependencies states)
+        this.propagationState = PropagatorState.SLEEPING;
+    }
+
+    /** Resumes the notification listening and recalculation lifecycle for this node */
+    wakeUp = () => {
+        this.propagationState = PropagatorState.ACTIVE;
+        this.triggerDataRecomputation()
     }
 }

@@ -44,3 +44,15 @@ NodeA.setDataFunction(new DataFunction<number>("1+1", new DumbNumberSumDefinitio
 NodeC.setDataFunction(new DataFunction<number>("", new DumbNumberSumDefinitionParser()))
 grid.printNodes()
 
+console.info("Iteration #6 :: Revert C to A+B; Put C to sleep and change A (dependency)")
+NodeC.setDataFunction(new DataFunction<number>("A+B", new DumbNumberSumDefinitionParser()))
+grid.printNodes()
+
+NodeC.sleep()
+NodeA.setDataFunction(new DataFunction<number>("1+2", new DumbNumberSumDefinitionParser()))
+grid.printNodes()
+
+console.info("Iteration #7 :: Wake up C (should reconcile its data with the new values from A and B)")
+NodeC.wakeUp()
+grid.printNodes()
+

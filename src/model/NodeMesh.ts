@@ -13,13 +13,9 @@ export class NodeMesh<T> {
         this.nodes = new Map()
         nodes.forEach(this.addNode)
     }
-    
-    propagateNodeUpdate: UpdatePropagator<T> = (notifierId: string, nodeIds: Set<string>, data: T | undefined) => {
-        nodeIds.forEach(id => this.nodes.get(id)?.notify(notifierId, data))
-    }
 
     printNodes = () => {
-        this.nodes.forEach((node) => console.info(`${node.id} => ${node.data}`))
+        this.nodes.forEach((node) => console.info(`${node.id} => ${node.data} [${node.propagationState}]`))
     }
 
     addNode = (baseNode: INode<T>) => {
