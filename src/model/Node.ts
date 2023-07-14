@@ -6,7 +6,7 @@ export interface INode<T> {
     id: string,
     hasOutdatedValue: boolean,
     data: T | undefined,
-    dataFn: IDataFunction<T>,
+    dataFn: IDataFunction<T> | undefined,
     setDataFunction: (_: IDataFunction<T>) => T | undefined,
     setUpdatePropagator: (updatePropagator: UpdatePropagator<T>) => INode<T>,
     setNodeFetcher: (fn: (id: string) => INode<T> | undefined) => INode<T>,
@@ -27,12 +27,16 @@ export interface INode<T> {
     wakeUp : () => void,
 }
 
-enum PropagatorState { "ACTIVE", "SLEEPY", "SLEEPING"};
+enum PropagatorState { 
+    ACTIVE = "ACTIVE", 
+    SLEEPY = "SLEEPY", 
+    SLEEPING = "SLEEPING"
+};
 
 export class Node<T> implements INode<T> {
     id: string;
     data: T | undefined;
-    dataFn: IDataFunction<T>;
+    dataFn: IDataFunction<T> | undefined;
     hasOutdatedValue: boolean = false
     dependents: Set<string>;
     // TODO: Optimization: store only Ids and query the NodeMesh registry for nodes
@@ -82,7 +86,7 @@ export class Node<T> implements INode<T> {
     }
 
     /** Modify self data and notify dependents */
-    setDataFunction = (fn: IDataFunction<T>): T | undefined => {
+    setDataFunction = (fn?: IDataFunction<T>): T | undefined => {
 
         // TODO: Prevent cycle dependencies (need to check if this node is anywhere above in the dependency graph)
         this.dataFn = fn;
@@ -93,7 +97,7 @@ export class Node<T> implements INode<T> {
 
         if(this.propagationState === PropagatorState.SLEEPING) return;
 
-        this.data = this.dataFn.compute(this.dependencies);
+        this.data = this.dataFn?.compute(this.dependencies);
         this.hasOutdatedValue = false
         // TODO optimization candidate: batching updates 
         // - Do not notify every time this changes right away, wait some time
@@ -104,14 +108,14 @@ export class Node<T> implements INode<T> {
     }
 
     /** Reconciles dependencies, adding missing ones, and removing unused ones */
-    reconcileDependencies = (newDependencyIds: Set<string>, force: boolean = false): Map<string, INode<T> | undefined> => {
+    reconcileDependencies = (newDependencyIds?: Set<string>, force: boolean = false): Map<string, INode<T> | undefined> => {
         
         console.info(`[Node ${this.id}] Reconciliating Dependencies...`);
         
         const newDependencyIdsClone = new Set(newDependencyIds);
         console.debug(`[Node ${this.id}] New Dependencies:`)
         newDependencyIdsClone.forEach(d => {
-            console.debug(`[Node ${this.id}]\t${d}:`)
+            console.debug(`[Node ${this.id}]\t${d}`)
         })
 
         const reconciledDependencies: Map<string, INode<T> | undefined> = new Map<string, INode<T> | undefined>()
@@ -148,14 +152,14 @@ export class Node<T> implements INode<T> {
     }
 
     triggerDataReconciliation = () => {
-        this.dependencies = this.reconcileDependencies(this.dataFn.dependencyIds)
+        this.dependencies = this.reconcileDependencies(this.dataFn?.dependencyIds)
 
         if(this.hasOutdatedValue) this.computeData()
     }
 
     triggerDataRecomputation = (): T | undefined => {
         console.info(`[Node ${this.id}] Recomputing data...`)
-        this.dependencies = this.reconcileDependencies(this.dataFn.dependencyIds);
+        this.dependencies = this.reconcileDependencies(this.dataFn?.dependencyIds);
         console.info(`[Node ${this.id}] Dependency values:`)
 
         for (const [id, dep] of this.dependencies) {

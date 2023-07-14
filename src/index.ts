@@ -56,3 +56,4 @@ console.info("Iteration #7 :: Wake up C (should reconcile its data with the new 
 NodeC.wakeUp()
 grid.printNodes()
 
+export {NodeMesh, Node, DataFunction, DumbNumberSumDefinitionParser}
