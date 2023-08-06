@@ -1,5 +1,5 @@
 import { DumbNumberSumDefinitionParser } from "./functions/Addition";
-import { DataFunction } from "./model/DataFunction";
+import { DataFunction } from "./functions/DataFunction";
 import { Node } from "./model/Node";
 import { NodeMesh } from "./model/NodeMesh";
 

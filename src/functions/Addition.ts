@@ -1,4 +1,4 @@
-import { DataFunction, DefinitionParsingResults, IDefinitionParser } from "../model/DataFunction";
+import { DataFunction, DefinitionParsingResults, IDefinitionParser } from "./DataFunction";
 import { INode } from "../model/Node";
 
 class AdditionFn extends DataFunction<number> {

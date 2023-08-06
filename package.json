@@ -1,7 +1,10 @@
 {
-    "name": "dependency-propagator-poc",
-    "version": "1.0.0",
+    "name": "@tecido/math-cells-manager",
+    "version": "0.1.0",
     "description": "",
+    "publishConfig": {
+        "access": "public"
+    },
     "main": "index.js",
     "type": "module",
     "scripts": {

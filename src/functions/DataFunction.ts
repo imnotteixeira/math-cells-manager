@@ -1,4 +1,4 @@
-import { INode } from "./Node";
+import { INode } from "../model/Node";
 
 type ComputeFunction<T> = (dependencies: Map<string, INode<T> | undefined>) => T | undefined;
 

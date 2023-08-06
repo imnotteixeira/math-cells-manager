@@ -1,4 +1,4 @@
-import { IDataFunction } from "./DataFunction";
+import { IDataFunction } from "../functions/DataFunction";
 
 export type UpdatePropagator<T> = (notifierId: string, deps: Set<string>, data: T | undefined) => void;
 
