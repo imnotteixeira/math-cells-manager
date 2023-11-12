@@ -1,3 +1,4 @@
+import { ValueResolvingResult } from "../functions/adapter/bettermath";
 import { INode, UpdatePropagator } from "./Node";
 
 export class NodeMesh<T> {
@@ -5,7 +6,7 @@ export class NodeMesh<T> {
     nodes: Map<string, INode<T>>;
     pendingSubscriptions: Map<string, Set<string>> = new Map() // Holds subscripton links to nodes that may not exist
 
-    private propagator: UpdatePropagator<T> = (notifierId: string, deps: Set<string>, data: T | undefined) => {
+    private propagator: UpdatePropagator<T> = (notifierId: string, deps: Set<string>, data: ValueResolvingResult<T | undefined>) => {
         deps.forEach(dep => this.nodes.get(dep)?.notify(notifierId, data))
     }
     
@@ -15,10 +16,13 @@ export class NodeMesh<T> {
     }
 
     printNodes = () => {
-        this.nodes.forEach((node) => console.info(`${node.id} => ${node.data} [${node.propagationState}]`))
+        this.nodes.forEach((node) => console.info(`${node.id} => ${node.data.getOrElse("<NO VALUE>")} [${node.propagationState}]`))
     }
 
     addNode = (baseNode: INode<T>) => {
+
+        if (this.nodes.has(baseNode.id)) throw new Error(`A node with id <${baseNode.id}> already exists.`);
+
         this.nodes.set(
             baseNode.id, 
             baseNode
