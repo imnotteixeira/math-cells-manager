@@ -19,6 +19,9 @@ export class NodeMesh<T> {
     }
 
     addNode = (baseNode: INode<T>) => {
+
+        if (this.nodes.has(baseNode.id)) throw new Error(`A node with id <${baseNode.id}> already exists.`);
+
         this.nodes.set(
             baseNode.id, 
             baseNode
@@ -32,7 +35,7 @@ export class NodeMesh<T> {
 
         this.nodes.forEach(node => node.triggerDataReconciliation())
 
-        if(this.pendingSubscriptions.has(baseNode.id)) {
+        if (this.pendingSubscriptions.has(baseNode.id)) {
             this.pendingSubscriptions.get(baseNode.id)?.forEach(requesterId => {
                 this.nodes.get(baseNode.id)?.subscribe(requesterId)
                 this.pendingSubscriptions.get(baseNode.id)?.delete(requesterId)
