@@ -1,5 +1,7 @@
 import typescript from '@rollup/plugin-typescript';
 import terser from '@rollup/plugin-terser';
+import commonjs from '@rollup/plugin-commonjs';
+import { nodeResolve } from '@rollup/plugin-node-resolve';
 
 export default {
 	input: 'src/index.ts',
@@ -8,7 +10,7 @@ export default {
 		format: 'es',
         plugins: [terser()]
 	},
-    plugins: [typescript()],
+    plugins: [typescript(), nodeResolve(), commonjs()],
     treeshake: {
         moduleSideEffects: false
     }

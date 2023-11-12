@@ -1,10 +1,11 @@
 import { INode } from "../model/Node";
+import { ValueResolvingResult } from "./adapter/bettermath";
 
-type ComputeFunction<T> = (dependencies: Map<string, INode<T> | undefined>) => T | undefined;
+type ComputeFunction<T> = (dependencies: Map<string, INode<T> | undefined>) => ValueResolvingResult<T | undefined>;
 
 export type DefinitionParsingResults<T> = {
     compute: ComputeFunction<T>,
-    dependencies: Set<string>
+    dependencyIds: Set<string>
 }
 export interface IDefinitionParser<T> {
     parseDefinition: (def: string) => DefinitionParsingResults<T>
@@ -28,10 +29,10 @@ export class DataFunction<T> implements IDataFunction<T> {
             try{
                 return parsingResults.compute(...args);
             } catch(e) {
-                return undefined
+                return ValueResolvingResult.error(e as Error)
             }
         }
-        this.dependencyIds = parsingResults.dependencies;
+        this.dependencyIds = parsingResults.dependencyIds;
     }
 
 }

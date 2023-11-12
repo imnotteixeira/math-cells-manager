@@ -1,22 +1,23 @@
 import { IDataFunction } from "../functions/DataFunction";
+import { ValueResolvingResult } from "../functions/adapter/bettermath";
 
-export type UpdatePropagator<T> = (notifierId: string, deps: Set<string>, data: T | undefined) => void;
+export type UpdatePropagator<T> = (notifierId: string, deps: Set<string>, data: ValueResolvingResult<T | undefined>) => void;
 
 export interface INode<T> {
     id: string,
     hasOutdatedValue: boolean,
-    data: T | undefined,
+    data: ValueResolvingResult<T | undefined>,
     dataFn: IDataFunction<T> | undefined,
-    setDataFunction: (_: IDataFunction<T>) => T | undefined,
+    setDataFunction: (_: IDataFunction<T>) => ValueResolvingResult<T | undefined>,
     setUpdatePropagator: (updatePropagator: UpdatePropagator<T>) => INode<T>,
     setNodeFetcher: (fn: (id: string) => INode<T> | undefined) => INode<T>,
     dependents: Set<string>,
     dependencies: Map<string, INode<T> | undefined>,
-    notify: (id: string, data: T | undefined) => void,
+    notify: (id: string, data: ValueResolvingResult<T | undefined>) => void,
     propagateUpdate: UpdatePropagator<T>,
     subscribe: (dependentId: string) => void,
     unsubscribe: (dependentId: string) => void,
-    triggerDataRecomputation: () => T | undefined,
+    triggerDataRecomputation: () => ValueResolvingResult<T | undefined>,
     triggerDataReconciliation: () => void,
     requestSubscription: (requesterId: string, targetId: string) => void
     setSubscriptionRequester: (fn: (requesterId: string, targetId: string) => void) => INode<T>,
@@ -35,7 +36,7 @@ enum PropagatorState {
 
 export class Node<T> implements INode<T> {
     id: string;
-    data: T | undefined;
+    data: ValueResolvingResult<T | undefined>;
     dataFn: IDataFunction<T> | undefined;
     hasOutdatedValue: boolean = false
     dependents: Set<string>;
@@ -58,7 +59,11 @@ export class Node<T> implements INode<T> {
         this.id = id;
         this.dependents = new Set();
         this.dataFn = dataFn;
-        this.data = dataFn.compute(this.dependencies);
+
+        // Nodes are lazy. Data starts as undefined, setting this.hasOutdatedValue
+        // Once they are used in a NodeMesh, their values will be calculated as neeeded.
+        this.data = ValueResolvingResult.success(undefined)
+        this.hasOutdatedValue = true;
     }
 
     /** Updates this node with the propagator (should come from NodeMesh) */
@@ -86,18 +91,23 @@ export class Node<T> implements INode<T> {
     }
 
     /** Modify self data and notify dependents */
-    setDataFunction = (fn?: IDataFunction<T>): T | undefined => {
+    setDataFunction = (fn?: IDataFunction<T>): ValueResolvingResult<T | undefined> => {
 
         // TODO: Prevent cycle dependencies (need to check if this node is anywhere above in the dependency graph)
         this.dataFn = fn;
         return this.triggerDataRecomputation()
     }
 
-    computeData = (): T | undefined => {
+    getData = (): ValueResolvingResult<T | undefined> => this.data;
 
-        if(this.propagationState === PropagatorState.SLEEPING) return;
+    computeData = (): ValueResolvingResult<T | undefined> => {
 
-        this.data = this.dataFn?.compute(this.dependencies);
+        if(this.propagationState === PropagatorState.SLEEPING) return this.data;
+
+        this.data = this.dataFn 
+            ? this.dataFn.compute(this.dependencies) 
+            : ValueResolvingResult.success<T | undefined>(undefined);
+
         this.hasOutdatedValue = false
         // TODO optimization candidate: batching updates 
         // - Do not notify every time this changes right away, wait some time
@@ -157,20 +167,20 @@ export class Node<T> implements INode<T> {
         if(this.hasOutdatedValue) this.computeData()
     }
 
-    triggerDataRecomputation = (): T | undefined => {
+    triggerDataRecomputation = (): ValueResolvingResult<T | undefined> => {
         console.info(`[Node ${this.id}] Recomputing data...`)
         this.dependencies = this.reconcileDependencies(this.dataFn?.dependencyIds);
         console.info(`[Node ${this.id}] Dependency values:`)
 
         for (const [id, dep] of this.dependencies) {
-            console.info(`[Node ${this.id}]\t${id} => ${dep?.data}`)   
+            console.info(`[Node ${this.id}]\t${id} => ${dep?.data.getOrElse("<NO VALUE>")}`)   
         }
 
         return this.computeData();
     }
 
     /** Receive a notificaton when a dependency changes */
-    notify = (dependencyId: string, newValue: T | undefined): void => {
+    notify = (dependencyId: string, newValue: ValueResolvingResult<T | undefined>): void => {
         console.info(`[Node ${this.id}] Dependency [Node ${dependencyId}] changed to ${newValue}. Updating value...`)
         this.computeData()
     }
