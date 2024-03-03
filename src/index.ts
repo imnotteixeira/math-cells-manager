@@ -5,3 +5,5 @@ import BettermathDataFunction from "./functions/adapter/bettermath";
 
 
 export { NodeMesh, Node, DataFunction, BettermathDataFunction }
+
+export { IBaseType } from "@tecido/bettermath"

@@ -5,7 +5,8 @@
     "publishConfig": {
         "access": "public"
     },
-    "main": "index.js",
+    "main": "dist/index.js",
+    "typings": "dist/index.d.ts",
     "type": "module",
     "scripts": {
         "build": "tsc",
