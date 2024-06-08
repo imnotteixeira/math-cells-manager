@@ -9,8 +9,7 @@
     "typings": "dist/index.d.ts",
     "type": "module",
     "scripts": {
-        "build": "tsc",
-        "bundle": "rollup -c",
+        "build": "rollup -c",
         "run:bundle": "node ./dist/index.js",
         "start": "ts-node ./src/index.ts",
         "test": "echo \"Error: no test specified\" && exit 1",
@@ -22,8 +21,6 @@
     "devDependencies": {
         "@commitlint/cli": "^17.0.3",
         "@commitlint/config-conventional": "^17.0.3",
-        "@rollup/plugin-commonjs": "^25.0.7",
-        "@rollup/plugin-node-resolve": "^15.2.3",
         "@rollup/plugin-terser": "^0.4.3",
         "@rollup/plugin-typescript": "^11.1.5",
         "@semantic-release/git": "^10.0.1",
@@ -36,7 +33,7 @@
         "typescript": "^5.2.2"
     },
     "dependencies": {
-        "@tecido/bettermath": "^0.5.1",
+        "@tecido/bettermath": "^0.5.2",
         "immutable": "^5.0.0-beta.4"
     }
 }
